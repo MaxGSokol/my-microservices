@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+
+    <include file="1.1.0_user_session_table.sql" relativeToChangelogFile="true"/>
+    <include file="1.1.0_user_tel_book_table.sql" relativeToChangelogFile="true"/>
+    <include file="1.0.0_session_history_context_table.sql" relativeToChangelogFile="true"/>
+</databaseChangeLog>
