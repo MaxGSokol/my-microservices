@@ -1,0 +1,60 @@
+name: Deploy Microservices
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  DB_USER: ${{ secrets.DATASOURCE_UN }}
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ['bot-app', 'user-service', 'bot-core']
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      
+      - name: Build with Maven
+        working-directory: ${{ matrix.service }}
+        run: mvn clean package -DskipTests
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push Docker image
+        working-directory: ${{ matrix.service }}
+        run: |
+          docker build -t $DOCKER_REGISTRY/${{ github.repository_owner }}/${{ matrix.service }}:${{ github.sha }} .
+          docker push $DOCKER_REGISTRY/${{ github.repository_owner }}/${{ matrix.service }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/
+        env:
+          KUBECONFIG: ${{ secrets.KUBE_CONFIG }}
+          SERVICE_A_IMAGE: ghcr.io/${{ github.repository_owner }}/bot-app:${{ github.sha }}
+          SERVICE_B_IMAGE: ghcr.io/${{ github.repository_owner }}/user-service:${{ github.sha }}
+          SERVICE_C_IMAGE: ghcr.io/${{ github.repository_owner }}/bot-core:${{ github.sha }}
