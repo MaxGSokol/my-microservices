@@ -3,6 +3,7 @@ FROM eclipse-temurin:21-jdk as builder
 WORKDIR /app
 COPY . .
 # Собираем JAR без тестов
+RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests -pl bot-app
 
 # Финальный образ
